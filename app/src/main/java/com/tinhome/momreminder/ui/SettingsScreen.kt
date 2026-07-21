@@ -49,9 +49,7 @@ fun SettingsScreen(viewModel: ReminderViewModel, onDone: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    var isCheckingUpdate by remember { mutableStateOf(false) }
-    var availableUpdate by remember { mutableStateOf<UpdateResult.UpdateAvailable?>(null) }
-    var hasStartedDownload by remember { mutableStateOf(false) }
+    var isUpdating by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Нагадування на день") }) }
@@ -73,43 +71,26 @@ fun SettingsScreen(viewModel: ReminderViewModel, onDone: () -> Unit) {
 
             OutlinedButton(
                 onClick = {
-                    isCheckingUpdate = true
-                    availableUpdate = null
-                    hasStartedDownload = false
+                    isUpdating = true
                     scope.launch {
                         when (val result = GithubUpdateChecker.checkForUpdate(BuildConfig.VERSION_CODE)) {
                             is UpdateResult.UpToDate ->
                                 Toast.makeText(context, "У вас остання версія", Toast.LENGTH_SHORT).show()
-                            is UpdateResult.UpdateAvailable -> availableUpdate = result
+                            is UpdateResult.UpdateAvailable ->
+                                UpdateDownloader.download(context, result.downloadUrl, result.versionCode)
                             is UpdateResult.Error ->
                                 Toast.makeText(context, "Не вдалося перевірити оновлення", Toast.LENGTH_SHORT).show()
                         }
-                        isCheckingUpdate = false
+                        isUpdating = false
                     }
                 },
-                enabled = !isCheckingUpdate,
+                enabled = !isUpdating,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                if (isCheckingUpdate) {
+                if (isUpdating) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp))
                 } else {
-                    Text("Перевірити оновлення")
-                }
-            }
-
-            availableUpdate?.let { update ->
-                OutlinedButton(
-                    onClick = {
-                        hasStartedDownload = true
-                        UpdateDownloader.download(context, update.downloadUrl, update.versionCode)
-                    },
-                    enabled = !hasStartedDownload,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        if (hasStartedDownload) "Завантаження почалось…"
-                        else "Завантажити оновлення (версія ${update.versionCode})"
-                    )
+                    Text("Оновити зараз")
                 }
             }
 

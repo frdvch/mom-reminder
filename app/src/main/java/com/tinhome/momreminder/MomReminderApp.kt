@@ -18,7 +18,6 @@ import java.util.concurrent.TimeUnit
 const val ALARM_CHANNEL_ID = "alarm_channel"
 const val DIGEST_CHANNEL_ID = "digest_channel"
 const val MISSED_CHANNEL_ID = "missed_channel"
-const val UPDATE_CHANNEL_ID = "update_channel"
 
 private const val OLD_UPDATE_CHECK_WORK_NAME = "update_check"
 private const val UPDATE_CHECK_WORK_NAME = "update_check_morning"
@@ -81,14 +80,6 @@ class MomReminderApp : Application() {
             NotificationManager.IMPORTANCE_DEFAULT
         )
 
-        val updateChannel = NotificationChannel(
-            UPDATE_CHANNEL_ID,
-            "Оновлення застосунку",
-            NotificationManager.IMPORTANCE_DEFAULT
-        ).apply {
-            description = "Повідомляє, коли доступна нова версія застосунку"
-        }
-
-        manager.createNotificationChannels(listOf(alarmChannel, digestChannel, missedChannel, updateChannel))
+        manager.createNotificationChannels(listOf(alarmChannel, digestChannel, missedChannel))
     }
 }
