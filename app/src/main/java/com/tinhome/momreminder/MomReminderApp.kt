@@ -4,15 +4,41 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import com.tinhome.momreminder.update.UpdateCheckWorker
+import java.util.concurrent.TimeUnit
 
 const val ALARM_CHANNEL_ID = "alarm_channel"
 const val DIGEST_CHANNEL_ID = "digest_channel"
 const val MISSED_CHANNEL_ID = "missed_channel"
+const val UPDATE_CHANNEL_ID = "update_channel"
+
+private const val UPDATE_CHECK_WORK_NAME = "update_check"
+private const val UPDATE_CHECK_INTERVAL_HOURS = 24L
 
 class MomReminderApp : Application() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannels()
+        scheduleUpdateCheck()
+    }
+
+    private fun scheduleUpdateCheck() {
+        val request = PeriodicWorkRequestBuilder<UpdateCheckWorker>(
+            UPDATE_CHECK_INTERVAL_HOURS, TimeUnit.HOURS
+        ).setConstraints(
+            Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
+        ).build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            UPDATE_CHECK_WORK_NAME,
+            ExistingPeriodicWorkPolicy.KEEP,
+            request
+        )
     }
 
     private fun createNotificationChannels() {
@@ -42,6 +68,14 @@ class MomReminderApp : Application() {
             NotificationManager.IMPORTANCE_DEFAULT
         )
 
-        manager.createNotificationChannels(listOf(alarmChannel, digestChannel, missedChannel))
+        val updateChannel = NotificationChannel(
+            UPDATE_CHANNEL_ID,
+            "Оновлення застосунку",
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = "Повідомляє, коли доступна нова версія застосунку"
+        }
+
+        manager.createNotificationChannels(listOf(alarmChannel, digestChannel, missedChannel, updateChannel))
     }
 }

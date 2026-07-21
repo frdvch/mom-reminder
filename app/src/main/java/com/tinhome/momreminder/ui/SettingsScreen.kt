@@ -1,11 +1,14 @@
 package com.tinhome.momreminder.ui
 
 import android.app.TimePickerDialog
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -14,12 +17,21 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.tinhome.momreminder.BuildConfig
 import com.tinhome.momreminder.settings.DigestDaySettings
+import com.tinhome.momreminder.update.GithubUpdateChecker
+import com.tinhome.momreminder.update.UpdateDownloader
+import com.tinhome.momreminder.update.UpdateResult
 import java.time.DayOfWeek
+import kotlinx.coroutines.launch
 
 private val DAY_LABELS = mapOf(
     DayOfWeek.MONDAY to "Понеділок",
@@ -34,6 +46,11 @@ private val DAY_LABELS = mapOf(
 @Composable
 fun SettingsScreen(viewModel: ReminderViewModel, onDone: () -> Unit) {
     val days by viewModel.digestSettings.collectAsState()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    var isCheckingUpdate by remember { mutableStateOf(false) }
+    var availableUpdate by remember { mutableStateOf<UpdateResult.UpdateAvailable?>(null) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Нагадування на день") }) }
@@ -51,6 +68,40 @@ fun SettingsScreen(viewModel: ReminderViewModel, onDone: () -> Unit) {
                     daySettings = daySettings,
                     onChange = { updated -> viewModel.saveDigestDay(updated.dayOfWeek, updated.enabled, updated.hour, updated.minute) }
                 )
+            }
+
+            OutlinedButton(
+                onClick = {
+                    isCheckingUpdate = true
+                    availableUpdate = null
+                    scope.launch {
+                        when (val result = GithubUpdateChecker.checkForUpdate(BuildConfig.VERSION_CODE)) {
+                            is UpdateResult.UpToDate ->
+                                Toast.makeText(context, "У вас остання версія", Toast.LENGTH_SHORT).show()
+                            is UpdateResult.UpdateAvailable -> availableUpdate = result
+                            is UpdateResult.Error ->
+                                Toast.makeText(context, "Не вдалося перевірити оновлення", Toast.LENGTH_SHORT).show()
+                        }
+                        isCheckingUpdate = false
+                    }
+                },
+                enabled = !isCheckingUpdate,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (isCheckingUpdate) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                } else {
+                    Text("Перевірити оновлення")
+                }
+            }
+
+            availableUpdate?.let { update ->
+                OutlinedButton(
+                    onClick = { UpdateDownloader.download(context, update.downloadUrl, update.versionCode) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Завантажити оновлення (версія ${update.versionCode})")
+                }
             }
 
             OutlinedButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
