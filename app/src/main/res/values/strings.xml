@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Мама не забудь…</string>
+    <string name="add_reminder">Додати нагадування</string>
+    <string name="edit_reminder">Редагувати нагадування</string>
+    <string name="title_hint">Що нагадати?</string>
+    <string name="repeat_once">Одноразово</string>
+    <string name="repeat_daily">Щодня</string>
+    <string name="repeat_weekly">Певні дні тижня</string>
+    <string name="repeat_every_n_days">Кожні N днів</string>
+    <string name="pick_date">Обрати дату</string>
+    <string name="pick_time">Обрати час</string>
+    <string name="save">Зберегти</string>
+    <string name="delete">Видалити</string>
+    <string name="cancel">Скасувати</string>
+    <string name="delete_confirm_title">Видалити нагадування?</string>
+    <string name="delete_confirm_message">Цю дію не можна скасувати.</string>
+    <string name="mic_button_description">Записати голосом</string>
+    <string name="voice_error">Не вдалось розпізнати. Введи текст самостійно.</string>
+    <string name="alarm_done">Виконано</string>
+    <string name="alarm_snooze">Відкласти на 10 хв</string>
+    <string name="missed_notification_title">Ти пропустила нагадування</string>
+    <string name="no_reminders">Поки немає нагадувань. Натисни мікрофон або "+", щоб додати перше.</string>
+    <string name="past_time_error">Обраний час уже минув. Обери інший.</string>
+</resources>
