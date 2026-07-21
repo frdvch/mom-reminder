@@ -9,7 +9,10 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.tinhome.momreminder.update.UpdateCheckScheduler
 import com.tinhome.momreminder.update.UpdateCheckWorker
+import java.time.Duration
+import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
 
 const val ALARM_CHANNEL_ID = "alarm_channel"
@@ -17,7 +20,8 @@ const val DIGEST_CHANNEL_ID = "digest_channel"
 const val MISSED_CHANNEL_ID = "missed_channel"
 const val UPDATE_CHANNEL_ID = "update_channel"
 
-private const val UPDATE_CHECK_WORK_NAME = "update_check"
+private const val OLD_UPDATE_CHECK_WORK_NAME = "update_check"
+private const val UPDATE_CHECK_WORK_NAME = "update_check_morning"
 private const val UPDATE_CHECK_INTERVAL_HOURS = 24L
 
 class MomReminderApp : Application() {
@@ -28,13 +32,22 @@ class MomReminderApp : Application() {
     }
 
     private fun scheduleUpdateCheck() {
+        val workManager = WorkManager.getInstance(this)
+        // Migration from the old always-KEEP schedule (arbitrary time-of-day) to a fixed morning check.
+        workManager.cancelUniqueWork(OLD_UPDATE_CHECK_WORK_NAME)
+
+        val initialDelay = Duration.between(
+            LocalDateTime.now(),
+            UpdateCheckScheduler.nextMorningTrigger(LocalDateTime.now())
+        )
         val request = PeriodicWorkRequestBuilder<UpdateCheckWorker>(
             UPDATE_CHECK_INTERVAL_HOURS, TimeUnit.HOURS
-        ).setConstraints(
-            Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
-        ).build()
+        ).setInitialDelay(initialDelay.toMillis(), TimeUnit.MILLISECONDS)
+            .setConstraints(
+                Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
+            ).build()
 
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+        workManager.enqueueUniquePeriodicWork(
             UPDATE_CHECK_WORK_NAME,
             ExistingPeriodicWorkPolicy.KEEP,
             request
