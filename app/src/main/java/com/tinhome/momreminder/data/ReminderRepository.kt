@@ -3,14 +3,16 @@ package com.tinhome.momreminder.data
 import android.content.Context
 import com.tinhome.momreminder.alarm.AlarmScheduler
 import com.tinhome.momreminder.repeat.NextOccurrenceCalculator
+import com.tinhome.momreminder.widget.ReminderWidgetUpdater
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 
 class ReminderRepository(context: Context) {
-    private val dao = ReminderDatabase.getInstance(context).reminderDao()
-    private val scheduler = AlarmScheduler(context)
+    private val appContext = context.applicationContext
+    private val dao = ReminderDatabase.getInstance(appContext).reminderDao()
+    private val scheduler = AlarmScheduler(appContext)
 
     fun observeAll(): Flow<List<Reminder>> = dao.observeAll()
 
@@ -18,16 +20,20 @@ class ReminderRepository(context: Context) {
 
     suspend fun observeAllSnapshot(): List<Reminder> = dao.getActive()
 
+    suspend fun getNextActiveReminder(): Reminder? = dao.getNextActive()
+
     suspend fun save(reminder: Reminder): Long {
         val id = dao.upsert(reminder)
         val saved = reminder.copy(id = if (reminder.id == 0L) id else reminder.id)
         scheduler.schedule(saved)
+        ReminderWidgetUpdater.requestUpdate(appContext)
         return id
     }
 
     suspend fun delete(reminder: Reminder) {
         scheduler.cancel(reminder)
         dao.delete(reminder)
+        ReminderWidgetUpdater.requestUpdate(appContext)
     }
 
     /**
@@ -81,5 +87,6 @@ class ReminderRepository(context: Context) {
             dao.update(updated)
             scheduler.schedule(updated)
         }
+        ReminderWidgetUpdater.requestUpdate(appContext)
     }
 }

@@ -22,4 +22,5 @@
     <string name="missed_notification_title">Ти пропустила нагадування</string>
     <string name="no_reminders">Поки немає нагадувань. Натисни мікрофон або "+", щоб додати перше.</string>
     <string name="past_time_error">Обраний час уже минув. Обери інший.</string>
+    <string name="widget_empty_state">Немає активних нагадувань</string>
 </resources>

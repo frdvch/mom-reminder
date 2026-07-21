@@ -16,6 +16,9 @@ interface ReminderDao {
     @Query("SELECT * FROM reminders WHERE isActive = 1")
     suspend fun getActive(): List<Reminder>
 
+    @Query("SELECT * FROM reminders WHERE isActive = 1 ORDER BY dateTimeEpochMillis ASC LIMIT 1")
+    suspend fun getNextActive(): Reminder?
+
     @Query("SELECT * FROM reminders WHERE id = :id")
     suspend fun getById(id: Long): Reminder?
 

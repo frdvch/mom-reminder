@@ -7,6 +7,7 @@ import androidx.core.app.NotificationCompat
 import com.tinhome.momreminder.MISSED_CHANNEL_ID
 import com.tinhome.momreminder.R
 import com.tinhome.momreminder.data.ReminderRepository
+import com.tinhome.momreminder.widget.ReminderWidgetUpdater
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,6 +27,7 @@ class BootReceiver : BroadcastReceiver() {
                 }
 
                 DigestRescheduler.reschedule(context)
+                ReminderWidgetUpdater.requestUpdate(context)
             } finally {
                 pendingResult.finish()
             }
