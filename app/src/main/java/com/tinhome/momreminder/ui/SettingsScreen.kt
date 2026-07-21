@@ -51,6 +51,7 @@ fun SettingsScreen(viewModel: ReminderViewModel, onDone: () -> Unit) {
 
     var isCheckingUpdate by remember { mutableStateOf(false) }
     var availableUpdate by remember { mutableStateOf<UpdateResult.UpdateAvailable?>(null) }
+    var hasStartedDownload by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Нагадування на день") }) }
@@ -74,6 +75,7 @@ fun SettingsScreen(viewModel: ReminderViewModel, onDone: () -> Unit) {
                 onClick = {
                     isCheckingUpdate = true
                     availableUpdate = null
+                    hasStartedDownload = false
                     scope.launch {
                         when (val result = GithubUpdateChecker.checkForUpdate(BuildConfig.VERSION_CODE)) {
                             is UpdateResult.UpToDate ->
@@ -97,10 +99,17 @@ fun SettingsScreen(viewModel: ReminderViewModel, onDone: () -> Unit) {
 
             availableUpdate?.let { update ->
                 OutlinedButton(
-                    onClick = { UpdateDownloader.download(context, update.downloadUrl, update.versionCode) },
+                    onClick = {
+                        hasStartedDownload = true
+                        UpdateDownloader.download(context, update.downloadUrl, update.versionCode)
+                    },
+                    enabled = !hasStartedDownload,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Завантажити оновлення (версія ${update.versionCode})")
+                    Text(
+                        if (hasStartedDownload) "Завантаження почалось…"
+                        else "Завантажити оновлення (версія ${update.versionCode})"
+                    )
                 }
             }
 
